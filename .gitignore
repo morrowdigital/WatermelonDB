@@ -22,3 +22,5 @@ docs-build/
 
 # windows
 msbuild.binlog
+
+.yarn/cache
