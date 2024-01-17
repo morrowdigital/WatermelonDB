@@ -36,6 +36,9 @@ dependencies {
     //noinspection GradleDynamicVersion
     implementation 'com.facebook.react:react-native:+'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${getExtOrDefault('kotlinVersion')}"
+    implementation 'net.zetetic:sqlcipher-android:4.5.5@aar'
+    implementation 'androidx.sqlite:sqlite:2.2.0'
+
 }
 
 repositories {

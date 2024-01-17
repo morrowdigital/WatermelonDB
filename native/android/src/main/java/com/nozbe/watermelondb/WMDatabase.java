@@ -2,8 +2,14 @@ package com.nozbe.watermelondb;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteCursor;
-import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
+// import android.database.sqlite.SQLiteCursor;
+// import android.database.sqlite.SQLiteDatabase;
+import net.zetetic.database.sqlcipher.SQLiteDatabase;
+import net.zetetic.database.sqlcipher.SQLiteCursor;
+import net.zetetic.database.sqlcipher.SQLiteConnection;
+import net.zetetic.database.sqlcipher.SQLiteDatabaseHook;
+
 
 import java.io.File;
 import java.util.ArrayList;
@@ -43,6 +49,7 @@ public class WMDatabase {
     }
 
     private static SQLiteDatabase createSQLiteDatabase(String name, Context context, int openFlags) {
+        System.loadLibrary("sqlcipher");
         String path;
         if (name.equals(":memory:") || name.contains("mode=memory")) {
             context.getCacheDir().delete();
@@ -51,7 +58,14 @@ public class WMDatabase {
             // On some systems there is some kind of lock on `/databases` folder ¯\_(ツ)_/¯
             path = context.getDatabasePath("" + name + ".db").getPath().replace("/databases", "");
         }
-        return SQLiteDatabase.openDatabase(path, null, openFlags);
+
+        SQLiteDatabaseHook hook = new SQLiteDatabaseHook() {
+            public void preKey(SQLiteConnection connection) {}
+            public void postKey(SQLiteConnection connection) {}
+        };
+
+        Log.i("WMDB", "Calling openDatabase: " + name);
+        return SQLiteDatabase.openDatabase(path, "P@ssw0rd2", null, openFlags, hook);
     }
 
     public void setUserVersion(int version) {
@@ -149,6 +163,12 @@ public class WMDatabase {
     private ArrayList<String> getAllTables() {
         ArrayList<String> allTables = new ArrayList<>();
         try (Cursor cursor = rawQuery(Queries.select_tables)) {
+            // NOTE: This is a hack to get around the fact that `rawQuery` returns an empty cursor
+            // if there are no tables.
+            if (cursor.getCount() <= 0) {
+                return allTables;
+            }
+
             cursor.moveToFirst();
             int nameIndex = cursor.getColumnIndex("name");
             if (nameIndex > -1) {
